@@ -130,7 +130,6 @@ st.markdown("""
             transform: translateY(-1px);
         }
 
-        /* ✅ Badges d’état */
         .badge-not {
             background-color: #D9D9D9;
             color: #1B4079;
@@ -139,7 +138,6 @@ st.markdown("""
             font-weight: bold;
         }
 
-        /* ✅ Vert clair demandé pour le tag Processed */
         .badge-processed {
             background-color: #079C34;
             color: #FFFFFF;
@@ -148,7 +146,6 @@ st.markdown("""
             font-weight: bold;
         }
 
-        /* ✅ Pagination parfaitement alignée */
         .pagination-wrapper {
             display: flex;
             justify-content: space-between;
@@ -163,16 +160,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# 🚄 EN-TÊTE (compatibilité Windows + Cloud)
+# 🚄 EN-TÊTE (Windows + Streamlit Cloud)
 # ---------------------------------------------------
 def get_base64_image(image_path: Path):
     with open(image_path, "rb") as f:
         return b64encode(f.read()).decode()
 
-# Vérifie si le chemin absolu existe (Windows)
 local_logo = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\assets\\sncf_logo.png")
 cloud_logo = Path("assets/sncf_logo.png")
-
 logo_path = local_logo if local_logo.exists() else cloud_logo
 
 header_html = "<div class='header-box'>"
@@ -184,9 +179,7 @@ else:
 
 header_html += """
     <div class='main-title'>SNCF Confidential</div>
-    <div class='subtitle'>
-        Interface d’analyse et d’anonymisation automatique des candidatures.
-    </div>
+    <div class='subtitle'>Interface d’analyse et d’anonymisation automatique des candidatures.</div>
 </div>
 """
 st.markdown(header_html, unsafe_allow_html=True)
@@ -199,8 +192,9 @@ st.markdown("---")
 def load_excel(path: Path):
     return pd.read_excel(path)
 
+# ✅ Correction : bon sous-dossier pour le fichier
 local_excel = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\data\\metadata\\cv_metadata_llama3.xlsx")
-cloud_excel = Path("data/cv_metadata_llama3.xlsx")
+cloud_excel = Path("data/metadata/cv_metadata_llama3.xlsx")
 
 excel_path = local_excel if local_excel.exists() else cloud_excel
 
@@ -222,13 +216,10 @@ cols_to_hide = ["Nom", "Email"]
 df_display = df.drop(columns=[c for c in cols_to_hide if c in df.columns])
 
 # ---------------------------------------------------
-# ⚙️ PARAMÈTRES D’AFFICHAGE (fermés par défaut)
+# ⚙️ PARAMÈTRES D’AFFICHAGE
 # ---------------------------------------------------
 with st.sidebar.expander("⚙️ Paramètres d’affichage", expanded=False):
-    profiles_per_page = st.number_input(
-        "Nombre de candidatures par page :",
-        min_value=5, max_value=15, value=8, step=1
-    )
+    profiles_per_page = st.number_input("Nombre de candidatures par page :", min_value=5, max_value=15, value=8, step=1)
 
 total_profiles = len(df_display)
 total_pages = (total_profiles - 1) // profiles_per_page + 1
@@ -262,11 +253,7 @@ for idx, candidate in current_profiles.iterrows():
     profil_status = st.session_state.profil_status.get(idx, "Not Processed")
     cv_link = str(candidate.get("Lien", "")).strip()
 
-    badge_html = (
-        '<span class="badge-processed">Processed</span>'
-        if profil_status == "Processed"
-        else '<span class="badge-not">Not Processed</span>'
-    )
+    badge_html = '<span class="badge-processed">Processed</span>' if profil_status == "Processed" else '<span class="badge-not">Not Processed</span>'
 
     with st.container():
         st.markdown(f"""
