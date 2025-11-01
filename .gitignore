@@ -1,0 +1,3 @@
+# Ignorer tous les PDF dans le dossier data/CVs
+data/CVs/*.pdf
+data/CVs/**/*.pdf
