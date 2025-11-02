@@ -292,13 +292,18 @@ st.markdown("---")
 def load_excel(path: Path):
     return pd.read_excel(path)
 
-local_excel = Path(r"C:\Users\harri\Desktop\IT_MelvineYnov\data\metadata\cv_metadata_llama3_with_score.xlsx")
-cloud_excel = Path("data\metadata\cv_metadata_llama3_with_score.xlsx")
+# Recherche automatique du fichier Excel (local ou cloud)
+possible_paths = [
+    Path("data/metadata/cv_metadata_llama3_with_score.xlsx"),  # pour Streamlit Cloud / GitHub
+    Path(r"C:\Users\harri\Desktop\IT_MelvineYnov\data\metadata\cv_metadata_llama3_with_score.xlsx")  # pour ton PC
+]
 
-excel_path = local_excel if local_excel.exists() else cloud_excel
-if not excel_path.exists():
-    st.error("⚠️ Aucun fichier Excel trouvé.")
+excel_path = next((p for p in possible_paths if p.exists()), None)
+
+if excel_path is None:
+    st.error("⚠️ Aucun fichier Excel trouvé. Assure-toi qu’il est bien dans 'data/metadata/'.")
     st.stop()
+
 
 df = load_excel(excel_path)
 
