@@ -210,6 +210,17 @@ st.markdown("""
             box-shadow: 0 3px 6px rgba(0,0,0,0.2) !important;
             transition: all 0.2s ease !important;
         }
+        
+                /* Corrige l’écrasement visuel du select sur Streamlit Cloud */
+        div[data-baseweb="select"] {
+            min-width: 250px !important;   /* Largeur minimum garantie */
+            height: 51.5px !important;     /* Même hauteur que ton bouton */
+        }
+
+        div[data-baseweb="select"] > div {
+            line-height: 1.4 !important;   /* Rééquilibre le texte à l'intérieur */
+        }
+
 
 
 
