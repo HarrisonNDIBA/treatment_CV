@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# 🎨 STYLE SNCF AVEC PHOTO DANS LA ZONE BLANCHE DU BAS
+# 🎨 STYLE SNCF
 # ---------------------------------------------------
 st.markdown("""
     <style>
@@ -57,7 +57,6 @@ st.markdown("""
             margin-bottom: 0;
         }
 
-        /* ✅ Style pour le texte de l'offre (sans boîte) */
         .offre-text {
             font-size: 1.05rem;
             color: #1B4079;
@@ -67,9 +66,7 @@ st.markdown("""
             max-width: 900px;
         }
 
-        .offre-text b {
-            color: #000000;
-        }
+        .offre-text b { color: #000000; }
 
         .cv-card {
             background-color: #7F9C96;
@@ -109,6 +106,17 @@ st.markdown("""
         }
 
         .cv-card p { color: #F7F7F7; }
+
+        .cv-score {
+            background-color: #FFFFFF;
+            color: #1B4079;
+            padding: 0.3em 0.8em;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border: 2px solid #1B4079;
+            display: inline-block;
+        }
 
         .word-sheet {
             background-color: #FFFFFF;
@@ -162,23 +170,49 @@ st.markdown("""
             font-weight: 700;
         }
 
+        /* 🔹 Bouton "Terminer le traitement" harmonisé avec la liste déroulante */
         div.stButton > button {
-            background-color: #1B4079;
-            color: #FFFFFF;
-            font-weight: 600;
-            border: 2px solid #8FAD88;
-            border-radius: 8px;
-            padding: 0.6rem 1.2rem;
-            margin-top: 1rem;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            transition: all 0.2s ease;
+            background-color: #1B4079 !important;
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            border: 2px solid #8FAD88 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2) !important;
+            transition: all 0.2s ease !important;
+
+            width: 250px !important;
+            height: 51.5px !important;
+
+            /* 👇 Décale verticalement vers le bas */
+            margin-top: 0.8rem !important;  /* augmente ou diminue selon le besoin */
         }
 
+
+
+        /* Effet au survol identique à la liste */
         div.stButton > button:hover {
-            background-color: #4D7C8A;
-            border: 2px solid #1B4079;
+            background-color: #4D7C8A !important;
+            border: 2px solid #1B4079 !important;
             transform: translateY(-1px);
         }
+
+
+        div[data-baseweb="select"] > div {
+            background-color: #1B4079 !important;
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            border: 2px solid #8FAD88 !important;
+            border-radius: 8px !important;
+            padding: 0.3rem 0.8rem !important;
+            width: 250px !important;
+            margin-top: -0.2rem !important;   /* 🔹 Moins d'espace au-dessus */
+            margin-bottom: 0.1rem !important;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2) !important;
+            transition: all 0.2s ease !important;
+        }
+
+
+
 
         .badge-not {
             background-color: #D9D9D9;
@@ -242,7 +276,6 @@ header_html += """
 """
 st.markdown(header_html, unsafe_allow_html=True)
 
-# ✅ Texte OFFRE ajouté juste après la boîte du titre, sans encadrement
 st.markdown("""
 <div class='offre-text'>
     <b>OFFRE :</b> Nous recherchons un Data Analyst maîtrisant <b>Python</b>, <b>SQL</b>, <b>Power BI</b> et <b>Excel</b>.<br>
@@ -253,24 +286,29 @@ st.markdown("""
 st.markdown("---")
 
 # ---------------------------------------------------
-# 📂 LECTURE DU FICHIER EXCEL
+# 📂 LECTURE DU FICHIER EXCEL + TRI PAR SCORE
 # ---------------------------------------------------
 @st.cache_data
 def load_excel(path: Path):
     return pd.read_excel(path)
 
-local_excel = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\data\\metadata\\cv_metadata_llama3.xlsx")
-cloud_excel = Path("data/metadata/cv_metadata_llama3.xlsx")
+local_excel = Path(r"C:\Users\harri\Desktop\IT_MelvineYnov\data\metadata\cv_metadata_llama3_with_score.xlsx")
+cloud_excel = Path("data\metadata\cv_metadata_llama3_with_score.xlsx")
 
-if local_excel.exists():
-    excel_path = local_excel
-elif cloud_excel.exists():
-    excel_path = cloud_excel
-else:
+excel_path = local_excel if local_excel.exists() else cloud_excel
+if not excel_path.exists():
     st.error("⚠️ Aucun fichier Excel trouvé.")
     st.stop()
 
 df = load_excel(excel_path)
+
+if "score" not in df.columns:
+    st.error("❌ La colonne 'score' est absente du fichier Excel.")
+    st.stop()
+else:
+    df["score"] = pd.to_numeric(df["score"], errors="coerce").fillna(0)
+    df = df.sort_values(by="score", ascending=False).reset_index(drop=True)
+
 if "Profil" not in df.columns:
     df["Profil"] = "Not Processed"
 
@@ -279,7 +317,6 @@ if "profil_status" not in st.session_state:
 
 cols_to_hide = ["Nom", "Email"]
 df_display = df.drop(columns=[c for c in cols_to_hide if c in df.columns])
-
 
 # ---------------------------------------------------
 # 🧹 OUTILS
@@ -302,7 +339,6 @@ def get_base64_image(image_path: Path):
     with open(image_path, "rb") as f:
         return b64encode(f.read()).decode()
 
-# 🔁 Même logique que pour le logo : fallback local / cloud
 local_avatar = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\assets\\neutral_avatar.png")
 cloud_avatar = Path("assets/neutral_avatar.png")
 avatar_path = local_avatar if local_avatar.exists() else cloud_avatar
@@ -311,7 +347,6 @@ if avatar_path.exists():
     avatar_b64 = get_base64_image(avatar_path)
     avatar_html = f"<img src='data:image/png;base64,{avatar_b64}'>"
 else:
-    # 🧩 Affichage d’un cercle neutre si aucune image n’est trouvée
     avatar_html = """
     <div style='width:55px;height:55px;
                 border-radius:50%;
@@ -325,7 +360,7 @@ else:
     """
 
 # ---------------------------------------------------
-# 📋 AFFICHAGE DES CANDIDATS AVEC PAGINATION
+# 📋 AFFICHAGE DES CANDIDATS AVEC LISTE DÉROULANTE
 # ---------------------------------------------------
 profiles_per_page = 8
 total_profiles = len(df_display)
@@ -343,6 +378,7 @@ for idx, candidate in current_profiles.iterrows():
     candidate_number = idx + 1
     profil_status = st.session_state.profil_status.get(idx, "Not Processed")
     cv_link = str(candidate.get("Lien", "")).strip()
+    score = candidate.get("score", 0.0)
 
     badge_html = (
         '<span class="badge-processed">Processed</span>'
@@ -365,7 +401,8 @@ for idx, candidate in current_profiles.iterrows():
                     {avatar_html}
                     <h3>Candidat n°{candidate_number}</h3>
                 </div>
-                <div class="cv-right">
+                <div class="cv-right" style="display:flex;align-items:center;gap:0.8rem;">
+                    <div class="cv-score">{score:.2f}%</div>
                     {badge_html}
                 </div>
             </div>
@@ -386,10 +423,26 @@ for idx, candidate in current_profiles.iterrows():
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        if st.button(f"✅ Terminer le traitement du candidat {candidate_number}", key=f"btn_{idx}"):
-            st.session_state.profil_status[idx] = "Processed"
-            st.success(f"Candidat n°{candidate_number} marqué comme traité ✅.")
-            st.rerun()
+        # ✅ Liste déroulante + bouton côte à côte
+        col_select, col_button = st.columns([0.3, 0.9])  # ⬅️ Espacement resserré
+
+        with col_select:
+            st.markdown("<div style='margin-bottom: 0.4rem;'></div>", unsafe_allow_html=True)  # petit espace visuel
+            choix = st.selectbox(
+                f"Choisir une option pour le candidat {candidate_number}",
+                ["Aucune sélection", "Retenu pour un entretien", "Profil rejeté"],
+                key=f"select_{idx}",
+                label_visibility="collapsed"  # 🔹 masque le label au-dessus
+            )
+
+
+        with col_button:
+            if st.button(f"✅ Terminer le traitement du candidat {candidate_number}", key=f"btn_{idx}"):
+                st.session_state.profil_status[idx] = "Processed"
+                st.success(f"Candidat n°{candidate_number} marqué comme traité ✅ (Choix : {choix})")
+                st.rerun()
+
+
 
         st.markdown("</div>", unsafe_allow_html=True)
 
