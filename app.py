@@ -298,12 +298,31 @@ def display_field(label, value):
 # ---------------------------------------------------
 # 🧍‍♂️ AVATAR NEUTRE
 # ---------------------------------------------------
-avatar_path = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\assets\\neutral_avatar.png")
+def get_base64_image(image_path: Path):
+    with open(image_path, "rb") as f:
+        return b64encode(f.read()).decode()
+
+# 🔁 Même logique que pour le logo : fallback local / cloud
+local_avatar = Path(r"C:\\Users\\harri\\Desktop\\IT_MelvineYnov\\assets\\neutral_avatar.png")
+cloud_avatar = Path("assets/neutral_avatar.png")
+avatar_path = local_avatar if local_avatar.exists() else cloud_avatar
+
 if avatar_path.exists():
     avatar_b64 = get_base64_image(avatar_path)
     avatar_html = f"<img src='data:image/png;base64,{avatar_b64}'>"
 else:
-    avatar_html = "<div style='width:55px;height:55px;border-radius:50%;background:#FFF;border:2px solid #1B4079;'></div>"
+    # 🧩 Affichage d’un cercle neutre si aucune image n’est trouvée
+    avatar_html = """
+    <div style='width:55px;height:55px;
+                border-radius:50%;
+                background:#FFF;
+                border:2px solid #1B4079;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                font-weight:bold;
+                color:#1B4079;'>?</div>
+    """
 
 # ---------------------------------------------------
 # 📋 AFFICHAGE DES CANDIDATS AVEC PAGINATION
