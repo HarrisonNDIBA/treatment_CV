@@ -296,6 +296,7 @@ st.markdown("""
 
 st.markdown("---")
 
+
 # ---------------------------------------------------
 # 📂 LECTURE DU FICHIER EXCEL + TRI PAR SCORE
 # ---------------------------------------------------
@@ -390,6 +391,7 @@ start_idx = (current_page - 1) * profiles_per_page
 end_idx = start_idx + profiles_per_page
 current_profiles = df_display.iloc[start_idx:end_idx]
 
+
 for idx, candidate in current_profiles.iterrows():
     candidate_number = idx + 1
     profil_status = st.session_state.profil_status.get(idx, "Not Processed")
@@ -440,27 +442,86 @@ for idx, candidate in current_profiles.iterrows():
         st.markdown("</div>", unsafe_allow_html=True)
 
         # ✅ Liste déroulante + bouton côte à côte
-        col_select, col_button = st.columns([0.3, 0.9])  # ⬅️ Espacement resserré
+                # ✅ Liste déroulante + bouton côte à côte
+        col_select, col_button = st.columns([0.3, 0.9])
 
         with col_select:
-            st.markdown("<div style='margin-bottom: 0.4rem;'></div>", unsafe_allow_html=True)  # petit espace visuel
+            st.markdown("<div style='margin-bottom: 0.4rem;'></div>", unsafe_allow_html=True)
             choix = st.selectbox(
                 f"Choisir une option pour le candidat {candidate_number}",
                 ["Aucune sélection", "Retenu pour un entretien", "Profil rejeté"],
                 key=f"select_{idx}",
-                label_visibility="collapsed"  # 🔹 masque le label au-dessus
+                label_visibility="collapsed"
             )
 
+        # Clé unique pour gérer l’état Oui / Non
+        voir_infos_key = f"voir_infos_{idx}"
+        if voir_infos_key not in st.session_state:
+            st.session_state[voir_infos_key] = "Non"
 
+        # --- Bouton Terminer ---
         with col_button:
             if st.button(f"✅ Terminer le traitement du candidat {candidate_number}", key=f"btn_{idx}"):
-                st.session_state.profil_status[idx] = "Processed"
-                st.success(f"Candidat n°{candidate_number} marqué comme traité ✅ (Choix : {choix})")
-                st.rerun()
+                if choix == "Aucune sélection":
+                    st.warning("⚠️ Veuillez d'abord sélectionner un statut avant de terminer le traitement.")
+                else:
+                    st.session_state.profil_status[idx] = "Processed"
+                    st.success(f"Candidat n°{candidate_number} marqué comme traité ✅ (Choix : {choix})")
+                    st.session_state[f"show_expander_{idx}"] = True
+                    st.rerun()
 
+        # --- Expander Oui / Non ---
+        if st.session_state.get(f"show_expander_{idx}", False):
+            with st.expander("Souhaitez-vous afficher les informations confidentielles du candidat ?", expanded=True):
+                choix_infos = st.radio(
+                    "Afficher les informations confidentielles ?",
+                    ["Non", "Oui"],
+                    key=f"radio_{idx}",
+                    horizontal=True
+                )
+                if choix_infos != st.session_state[voir_infos_key]:
+                    st.session_state[voir_infos_key] = choix_infos
+                    st.rerun()
 
+        # --- Bloc CV déjà affiché ---
+                # --- Bloc CV déjà affiché ---
+        if st.session_state[voir_infos_key] == "Oui":
+            # Récupération des vraies infos confidentielles
+            nom_reel = df.at[idx, "Nom"] if "Nom" in df.columns and pd.notna(df.at[idx, "Nom"]) else "[FLOUTÉ]"
+            email_reel = df.at[idx, "Email"] if "Email" in df.columns and pd.notna(df.at[idx, "Email"]) else "[FLOUTÉ]"
+            photo_path = df.at[idx, "photo"] if "photo" in df.columns and pd.notna(df.at[idx, "photo"]) else ""
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            # ✅ Réaffichage des sections existantes, sans doublon
+            # On utilise les vraies données au lieu de [FLOUTÉ]
+            st.markdown(
+                f"""
+                <script>
+                    const cards = window.parent.document.querySelectorAll('.cv-card');
+                    const current = cards[{idx - start_idx}];
+                    if (current) {{
+                        const nomEl = Array.from(current.querySelectorAll('.cv-section b'))
+                            .find(e => e.textContent.trim().startsWith('Nom'));
+                        if (nomEl && nomEl.nextSibling)
+                            nomEl.nextSibling.textContent = " {nom_reel}";
+
+                        const emailEl = Array.from(current.querySelectorAll('.cv-section b'))
+                            .find(e => e.textContent.trim().startsWith('Email'));
+                        if (emailEl && emailEl.nextSibling)
+                            emailEl.nextSibling.textContent = " {email_reel}";
+
+                        const photo = current.querySelector('.photo-frame');
+                        if (photo) {{
+                            {"photo.innerHTML = `<img src='file:///" + photo_path.replace("\\", "/") + "' style='width:100%;height:100%;object-fit:cover;border-radius:10px;'>`;" if photo_path and os.path.exists(photo_path) else "photo.innerText = 'Aucune photo';"}
+                        }}
+                    }}
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
+
+        elif st.session_state.profil_status[idx] == "Processed":
+            st.info("Les informations confidentielles restent cachées.")
+
 
     st.markdown("<hr class='separator'>", unsafe_allow_html=True)
 
